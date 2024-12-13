@@ -1,0 +1,16 @@
+- hosts: jenkins
+  become: yes
+  tasks:
+    - name: Install Jenkins Plugins
+      shell: |
+        jenkins-plugin-cli --plugins docker-workflow pipeline-model-definition
+
+    - name: Configure GCR Docker Auth
+      shell: |
+        echo $GOOGLE_APPLICATION_CREDENTIALS > /var/lib/jenkins/gcr-key.json
+        docker login -u _json_key --password-stdin https://gcr.io < /var/lib/jenkins/gcr-key.json
+
+    - name: Restart Jenkins
+      service:
+        name: jenkins
+        state: restarted

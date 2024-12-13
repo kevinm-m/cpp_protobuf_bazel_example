@@ -1,0 +1,48 @@
+pipeline {
+    agent any
+    environment {
+        PYTHON_IMAGE = 'python:3.9-slim'  // Generic Python container
+    }
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git 'https://github.com/<your-repo>/cpp-protobuf-hello-world.git'
+            }
+        }
+        stage('Build Project') {
+            steps {
+                sh 'bazel build //main:hello_world'
+            }
+        }
+        stage('Run Tests in Containers') {
+            parallel {
+                stage('Test 1') {
+                    steps {
+                        sh """
+                        docker run --rm \
+                        -v \$(pwd):/workspace \
+                        -w /workspace \
+                        $PYTHON_IMAGE bash -c "
+                        pip install -r src/requirements.txt &&
+                        python src/tests/test1.py
+                        "
+                        """
+                    }
+                }
+                stage('Test 2') {
+                    steps {
+                        sh """
+                        docker run --rm \
+                        -v \$(pwd):/workspace \
+                        -w /workspace \
+                        $PYTHON_IMAGE bash -c "
+                        pip install -r src/requirements.txt &&
+                        python src/tests/test2.py
+                        "
+                        """
+                    }
+                }
+            }
+        }
+    }
+}
